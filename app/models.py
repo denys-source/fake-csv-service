@@ -83,8 +83,9 @@ class Integer(DataType):
     to_bound = models.IntegerField()
 
     def clean(self) -> None:
-        if self.from_bound > self.to_bound:
-            raise ValidationError("From must be <= to")
+        if self.from_bound and self.to_bound:
+            if self.from_bound > self.to_bound:
+                raise ValidationError("From must be <= to")
 
     def save(self, *args, **kwargs):
         self.full_clean()
