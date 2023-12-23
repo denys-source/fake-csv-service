@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "crispy_forms",
     "crispy_bootstrap4",
+    "polymorphic",
     "app",
     "user",
 ]
@@ -115,6 +116,9 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGIN_REDIRECT_URL = "schema_list"
+LOGOUT_REDIRECT_URL = "login"
 
 AUTH_USER_MODEL = "user.User"
 
