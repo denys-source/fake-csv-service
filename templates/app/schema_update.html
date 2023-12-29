@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load helper_tags %}
+{% block content %}
+  <form method="post">
+    <div class="row">
+      {% csrf_token %}
+      <div class="col-md-3">
+        <h3>Update Schema</h3>
+        {{ schema_form|crispy }}
+        <input type="submit" class="btn btn-primary mt-3" value="Submit">
+      </div>
+      <div class="col-md-4">
+        <h3>Update columns</h3>
+        {% if not inline_formset.total_form_count %}<p class="text-muted">There are no columns yet</p>{% endif %}
+        {{ inline_formset.management_form }}
+        {% for form in inline_formset %}
+          <fieldset class="collapsable border rounded-3 p-4 mt-3">
+            <legend role="button" class="float-none w-auto px-3">{% get_form_name form %}</legend>
+            <div class="fieldset-contents">{{ form|crispy }}</div>
+          </fieldset>
+        {% endfor %}
+      </div>
+      <div class="col-md-5">
+        <h3>Add columns</h3>
+        {% include "components/schema_formset.html" %}
+      </div>
+    </div>
+  </form>
+{% endblock content %}
+{% block script %}
+  <script src="{% static "app/js/formsets.js" %}"></script>
+{% endblock script %}
