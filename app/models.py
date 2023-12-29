@@ -55,30 +55,33 @@ class DataType(PolymorphicModel):
     column_name = models.CharField(max_length=63)
     order = models.PositiveIntegerField()
     schema = models.ForeignKey(
-        Schema, related_name="datatypes", on_delete=models.CASCADE
+        Schema, related_name="columns", on_delete=models.CASCADE
     )
+
+    class Meta:
+        ordering = ("order",)
 
     def __str__(self) -> str:
         return self.column_name
 
 
 class FullName(DataType):
-    class Meta:
+    class Meta(DataType.Meta):
         verbose_name = "Full Name"
 
 
 class Job(DataType):
-    class Meta:
+    class Meta(DataType.Meta):
         verbose_name = "Job"
 
 
 class Email(DataType):
-    class Meta:
+    class Meta(DataType.Meta):
         verbose_name = "Email"
 
 
 class DomainName(DataType):
-    class Meta:
+    class Meta(DataType.Meta):
         verbose_name = "Domain Name"
 
 
@@ -86,7 +89,7 @@ class Integer(DataType):
     from_bound = models.IntegerField()
     to_bound = models.IntegerField()
 
-    class Meta:
+    class Meta(DataType.Meta):
         verbose_name = "Integer"
 
     def clean(self) -> None:
