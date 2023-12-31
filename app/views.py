@@ -1,8 +1,11 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import formset_factory
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.urls import reverse
+from django.views.generic import DetailView, FormView, ListView, View
 from polymorphic.formsets import (
     polymorphic_inlineformset_factory,
     PolymorphicFormSetChild,
@@ -11,6 +14,14 @@ from polymorphic.formsets import (
 from app.forms import FORMS_TO_RENDER, SchemaForm
 from app.models import DataType, Schema
 from app.utils import get_formsets
+
+
+class SchemaListView(LoginRequiredMixin, ListView):
+    model = Schema
+    template_name = "app/schema_list.html"
+
+    def get_queryset(self):
+        return Schema.objects.filter(created_by=self.request.user)
 
 
 @login_required
@@ -47,7 +58,7 @@ def schema_create_view(request):
                         column.schema = schema
                         column.save()
 
-            return redirect("/")
+            return redirect("schema_list")
 
         return render(
             request,
@@ -111,7 +122,7 @@ def schema_update_view(request, pk):
                         column.schema = schema
                         column.save()
 
-            return redirect("/")
+            return redirect("schema_list")
 
         return render(
             request,

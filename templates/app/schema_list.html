@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex gap-4">
+    <h3>Your Schemas</h3>
+    <a href="{% url 'schema_create' %}" class="btn btn-primary my-auto">
+      <i class="fas fa-plus"></i> New schema
+    </a>
+  </div>
+  {% if schema_list %}
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>№</th>
+          <th>Title</th>
+          <th>Modified</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for schema in schema_list %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>
+              <a href="{% url 'schema_detail' schema.pk %}">{{ schema.name }}</a>
+            </td>
+            <td>{{ schema.modified|date:"Y-m-d" }}</td>
+            <td>
+              <a href="{% url 'schema_update' schema.pk %}" class="btn btn-primary">Edit</a>
+              <a href="#" class="btn btn-danger">Delete</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-muted">You haven't created any schemas yet</p>
+  {% endif %}
+{% endblock content %}
