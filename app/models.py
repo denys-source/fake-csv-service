@@ -1,7 +1,14 @@
+import random
+from typing import Any
+
+from faker import Faker
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from polymorphic.models import PolymorphicModel
+
+
+fake = Faker()
 
 
 class Schema(models.Model):
@@ -42,6 +49,7 @@ class DataSetTask(models.Model):
     status = models.CharField(
         max_length=63, choices=STATUSES, default="processing"
     )
+    created = models.DateField(auto_now_add=True)
     file = models.FileField(upload_to="uploads/%Y/%m/%d/", null=True)
     schema = models.ForeignKey(
         Schema, related_name="datasets", on_delete=models.CASCADE
@@ -69,20 +77,32 @@ class FullName(DataType):
     class Meta(DataType.Meta):
         verbose_name = "Full Name"
 
+    def generate(self) -> Any:
+        return fake.name()
+
 
 class Job(DataType):
     class Meta(DataType.Meta):
         verbose_name = "Job"
+
+    def generate(self) -> Any:
+        return fake.job()
 
 
 class Email(DataType):
     class Meta(DataType.Meta):
         verbose_name = "Email"
 
+    def generate(self) -> Any:
+        return fake.email()
+
 
 class DomainName(DataType):
     class Meta(DataType.Meta):
         verbose_name = "Domain Name"
+
+    def generate(self) -> Any:
+        return fake.domain_name()
 
 
 class Integer(DataType):
@@ -100,3 +120,6 @@ class Integer(DataType):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+    def generate(self) -> Any:
+        return random.randint(self.from_bound, self.to_bound)

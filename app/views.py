@@ -1,19 +1,31 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import formset_factory
 from django.http import HttpResponseForbidden
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.urls import reverse
 from django.views.generic import DetailView, FormView, ListView, View
+from django.views.generic.detail import SingleObjectMixin
 from polymorphic.formsets import (
     polymorphic_inlineformset_factory,
     PolymorphicFormSetChild,
 )
 
-from app.forms import FORMS_TO_RENDER, SchemaForm
-from app.models import DataType, Schema
+from app.forms import FORMS_TO_RENDER, DataSetForm, SchemaForm
+from app.models import DataSetTask, DataType, Schema
+from app.tasks import generate_dataset
 from app.utils import get_formsets
+
+
+class UserOwnerMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if self.get_object().created_by != request.user:
+            return HttpResponseForbidden(
+                "You are not allowed to view this page"
+            )
+        return super().dispatch(request, *args, **kwargs)
 
 
 class SchemaListView(LoginRequiredMixin, ListView):
@@ -22,6 +34,53 @@ class SchemaListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Schema.objects.filter(created_by=self.request.user)
+
+
+class SchemaView(View):
+    def get(self, request, *args, **kwargs):
+        view = SchemaDetailView.as_view()
+        return view(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        view = SchemaDataSetFormView.as_view()
+        return view(request, *args, **kwargs)
+
+
+class SchemaDetailView(LoginRequiredMixin, UserOwnerMixin, DetailView):
+    model = Schema
+    template_name = "app/schema_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = DataSetForm()
+        return context
+
+
+class SchemaDataSetFormView(UserOwnerMixin, SingleObjectMixin, FormView):
+    model = Schema
+    form_class = DataSetForm
+    template_name = "app/schema_detail.html"
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden()
+
+        self.object = self.get_object()
+        form = self.get_form()
+        if form.is_valid():
+            rows = form.cleaned_data.get("rows")
+            task = DataSetTask.objects.create(schema=self.object)
+            generate_dataset.delay(self.object.pk, task.pk, rows)
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self) -> str:
+        return reverse("schema_detail", kwargs={"pk": self.object.pk})
 
 
 @login_required

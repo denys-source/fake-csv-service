@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from app.models import (
     DomainName,
@@ -62,3 +63,15 @@ class IntegerForm(forms.ModelForm):
         model = Integer
         fields = ("column_name", "order", "from_bound", "to_bound")
         labels = {"from_bound": "From", "to_bound": "To"}
+
+
+class DataSetForm(forms.Form):
+    rows = forms.IntegerField(
+        label="", widget=forms.TextInput(attrs={"placeholder": "Rows"})
+    )
+
+    def clean_rows(self):
+        rows = self.cleaned_data.get("rows")
+        if rows < 1:
+            raise ValidationError("Value has to be greater then 0")
+        return rows
