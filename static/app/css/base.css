@@ -22,3 +22,15 @@ fieldset.collapsable.active legend::after {
 fieldset.collapsable:not(.active) .fieldset-contents {
   display: none;
 }
+
+.processing {
+  background-color: #f5c211;
+}
+
+.ready {
+  background-color: #33d17a;
+}
+
+.failed {
+  background-color: #e01b24;
+}
