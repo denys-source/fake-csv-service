@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block content %}
+  <form method="post">
+    <div class="row">
+      {% csrf_token %}
+      <div class="col-md-4">
+        <h3>Create Schema</h3>
+        {{ schema_form|crispy }}
+        <input type="submit" class="btn btn-primary mt-3" value="Submit">
+      </div>
+      <div class="col-md-8">
+        <h3>Add columns</h3>
+        {% include "components/schema_formset.html" %}
+      </div>
+    </div>
+  </form>
+{% endblock content %}
+{% block script %}
+  <script src="{% static "app/js/formsets.js" %}"></script>
+{% endblock script %}
