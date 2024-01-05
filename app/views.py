@@ -5,8 +5,14 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.urls import reverse
-from django.views.generic import DetailView, FormView, ListView, View
+from django.urls import reverse, reverse_lazy
+from django.views.generic import (
+    DeleteView,
+    DetailView,
+    FormView,
+    ListView,
+    View,
+)
 from django.views.generic.detail import SingleObjectMixin
 from polymorphic.formsets import (
     polymorphic_inlineformset_factory,
@@ -56,7 +62,9 @@ class SchemaDetailView(LoginRequiredMixin, UserOwnerMixin, DetailView):
         return context
 
 
-class SchemaDataSetFormView(UserOwnerMixin, SingleObjectMixin, FormView):
+class SchemaDataSetFormView(
+    LoginRequiredMixin, UserOwnerMixin, SingleObjectMixin, FormView
+):
     model = Schema
     form_class = DataSetForm
     template_name = "app/schema_detail.html"
@@ -81,6 +89,21 @@ class SchemaDataSetFormView(UserOwnerMixin, SingleObjectMixin, FormView):
 
     def get_success_url(self) -> str:
         return reverse("schema_detail", kwargs={"pk": self.object.pk})
+
+
+class SchemaDeleteView(LoginRequiredMixin, UserOwnerMixin, DeleteView):
+    model = Schema
+    template_name = "app/schema_delete.html"
+    success_url = reverse_lazy("schema_list")
+
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        # HACK: django-polymorphic issue #34
+        with transaction.atomic():
+            columns = DataType.objects.filter(schema=self.object)
+            columns.non_polymorphic().delete()
+            self.object.delete()
+        return HttpResponseRedirect(success_url)
 
 
 @login_required
@@ -134,7 +157,6 @@ def schema_update_view(request, pk):
         return HttpResponseForbidden("You are not allowed to view this page")
 
     formset_classes = [formset_factory(form) for _, form in FORMS_TO_RENDER]
-    formsets = get_formsets(formset_classes)
     child_formsets = [
         PolymorphicFormSetChild(model, form=form)
         for model, form in FORMS_TO_RENDER
@@ -150,6 +172,7 @@ def schema_update_view(request, pk):
     if request.method == "GET":
         schema_form = SchemaForm(instance=schema)
         inline_formset = ColumnInlineFormSet(instance=schema)
+        formsets = get_formsets(formset_classes)
         return render(
             request,
             "app/schema_update.html",
